@@ -1,0 +1,14 @@
+{
+    "name": "iwantblv/cache-decorator",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "gil",
+            "email": "dragan.stefanov@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+
+    }
+}
