@@ -15,10 +15,10 @@ class CacheDecorator {
      */
     protected $repository;
 
-	public function __construct(CacheInterface $cache)
-	{
-		$this->cache = $cache;
-	}
+    public function __construct(CacheInterface $cache)
+    {
+        $this->cache = $cache;
+    }
 
     /**
      * Set TTL
