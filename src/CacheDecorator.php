@@ -2,49 +2,93 @@
 
 class CacheDecorator {
 
-	protected $cache;
-
-	protected $cacheNamepace = '';
-
-	protected $life = 1;
-
-	protected $repository;
+    /**
+     * @var mixed
+     */
+    protected $cache;
+    /**
+     * @var int
+     */
+    protected $ttl = 1;
+    /**
+     * @var
+     */
+    protected $repository;
 
 	public function __construct(CacheInterface $cache)
 	{
 		$this->cache = $cache;
 	}
 
-	public function decorate($repository)
-	{
-		$this->repository = $repository;
+    /**
+     * Set TTL
+     *
+     * @param $ttl
+     * @return $this
+     */
+    public function expiresIn($ttl)
+    {
+        $this->ttl = $ttl;
 
-		return $this;
-	}
+        return $this;
+    }
 
-	public function __call($method, $params)
-	{
-		$key = $this->getKey($method, $params);
+    /**
+     * @param $repository
+     * @return $this
+     */
+    public function decorate($repository)
+    {
+        $this->repository = $repository;
 
-		return $this->cache->get($key) ?: $this->getFresh($key, $method, $params);
-	}
+        return $this;
+    }
 
-	protected function getKey($method, $params)
-	{
-		return sprintf('%s.%s', $this->cacheNamepace, md5($method . implode('', $params)));
-	}
+    /**
+     * @param $method
+     * @param $params
+     * @return mixed
+     * @throws \Exception
+     */
+    public function __call($method, $params)
+    {
+        if ($this->repository)
+        {
+            // key factory
+            $key = $this->getKey($method, $params);
 
-	protected function getFresh($key, $method, $params)
-	{
-		if ($this->repository)
-		{
-			$fresh = call_user_func([$this->repository, $method], $params);
+            return $this->cache->get($key) ? : $this->getFresh($method, $params, $key);
+        }
 
-			$this->cache->put($key, $fresh, $this->life);
+        throw new Exception("Repository is missing");
+    }
 
-			return $fresh;
-		}
+    /**
+     * Key Factory
+     *
+     * @param $method
+     * @param $params
+     * @return string
+     */
+    protected function getKey($method, $params)
+    {
+        return md5(get_class($this->repository) . $method . serialize($params));
+    }
 
-		return throw new Exception("Repository is missing");
-	}
+    /**
+     * Gets fresh data, puts it in cache and returns it
+     *
+     * @param $method
+     * @param $params
+     * @param $newKey
+     * @return mixed
+     */
+    protected function getFresh($method, $params, $newKey)
+    {
+        $fresh = call_user_func_array([$this->repository, $method], $params);
+
+        $this->cache->put($newKey, $fresh, $this->ttl);
+
+        return $fresh;
+    }
 }
